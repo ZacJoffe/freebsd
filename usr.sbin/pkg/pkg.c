@@ -836,14 +836,13 @@ bootstrap_pkg(bool force)
 	char url[MAXPATHLEN];
 	char tmppkg[MAXPATHLEN];
 	char tmpsig[MAXPATHLEN];
-	char *packagename;
+	char packagename[MAXPATHLEN];
 	const char *packagesite;
 	const char *signature_type;
 	char pkgstatic[MAXPATHLEN];
 
 	fd_sig = -1;
 	ret = -1;
-	packagename = NULL;
 
 	if (config_string(PACKAGESITE, &packagesite) != 0) {
 		warnx("No PACKAGESITE defined");
@@ -864,8 +863,8 @@ bootstrap_pkg(bool force)
 	    strlen(URL_SCHEME_PREFIX)) == 0)
 		packagesite += strlen(URL_SCHEME_PREFIX);
 
-	for (const char **n = extensions; n != NULL; (*n)++) {
-		snprintf(packagename, MAXPATHLEN, "pkg.%s", *n);
+	for (const char **n = extensions; *n != NULL; n++) {
+		snprintf(packagename, MAXPATHLEN, "pkg%s", *n);
 		snprintf(url, MAXPATHLEN, "%s/Latest/%s", packagesite, packagename);
 
 		snprintf(tmppkg, MAXPATHLEN, "%s/%s.XXXXXX",
@@ -915,15 +914,12 @@ bootstrap_pkg(bool force)
 				goto cleanup;
 			}
 		}
+
+		if ((ret = extract_pkg_static(fd_pkg, pkgstatic, MAXPATHLEN)) == 0)
+			ret = install_pkg_static(pkgstatic, tmppkg, force);
+
+		goto cleanup;
 	}
-
-	if ((fd_pkg = fetch_to_fd(url, tmppkg)) == -1)
-		goto fetchfail;
-
-	if ((ret = extract_pkg_static(fd_pkg, pkgstatic, MAXPATHLEN)) == 0)
-		ret = install_pkg_static(pkgstatic, tmppkg, force);
-
-	goto cleanup;
 
 fetchfail:
 	warnx("Error fetching %s: %s", url, fetchLastErrString);
