@@ -13,7 +13,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,9 +30,9 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include <sys/types.h>
 #include <sys/param.h>
 #include <sys/queue.h>
-#include <sys/types.h>
 #include <sys/sbuf.h>
 #include <sys/wait.h>
 
@@ -43,19 +43,18 @@ __FBSDID("$FreeBSD$");
 #include <errno.h>
 #include <fcntl.h>
 #include <fetch.h>
-#include <paths.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <ucl.h>
-
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <paths.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ucl.h>
+#include <unistd.h>
 
-#include "dns_utils.h"
 #include "config.h"
+#include "dns_utils.h"
 
 struct sig_cert {
 	char *name;
@@ -121,8 +120,8 @@ extract_pkg_static(int fd, char *p, int sz)
 		if (strcmp(end, "/pkg-static") == 0) {
 			r = archive_read_extract(a, ae,
 			    ARCHIVE_EXTRACT_OWNER | ARCHIVE_EXTRACT_PERM |
-			    ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_ACL |
-			    ARCHIVE_EXTRACT_FFLAGS | ARCHIVE_EXTRACT_XATTR);
+				ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_ACL |
+				ARCHIVE_EXTRACT_FFLAGS | ARCHIVE_EXTRACT_XATTR);
 			strlcpy(p, archive_entry_pathname(ae), sz);
 			break;
 		}
@@ -137,7 +136,6 @@ extract_pkg_static(int fd, char *p, int sz)
 cleanup:
 	archive_read_free(a);
 	return (ret);
-
 }
 
 static int
@@ -154,8 +152,7 @@ install_pkg_static(const char *path, const char *pkgpath, bool force)
 			execl(path, "pkg-static", "add", "-f", pkgpath,
 			    (char *)NULL);
 		else
-			execl(path, "pkg-static", "add", pkgpath,
-			    (char *)NULL);
+			execl(path, "pkg-static", "add", pkgpath, (char *)NULL);
 		_exit(1);
 	default:
 		break;
@@ -191,8 +188,8 @@ fetch_to_fd(const char *url, char *path)
 	current = mirrors = NULL;
 	remote = NULL;
 
-	if (mirror_type == NULL && config_string(MIRROR_TYPE, &mirror_type)
-	    != 0) {
+	if (mirror_type == NULL &&
+	    config_string(MIRROR_TYPE, &mirror_type) != 0) {
 		warnx("No MIRROR_TYPE defined");
 		return (-1);
 	}
@@ -213,8 +210,8 @@ fetch_to_fd(const char *url, char *path)
 		if (retry == max_retry) {
 			if (strcmp(u->scheme, "file") != 0 &&
 			    strcasecmp(mirror_type, "srv") == 0) {
-				snprintf(zone, sizeof(zone),
-				    "_%s._tcp.%s", u->scheme, u->host);
+				snprintf(zone, sizeof(zone), "_%s._tcp.%s",
+				    u->scheme, u->host);
 				mirrors = dns_getsrvinfo(zone);
 				current = mirrors;
 			}
@@ -315,11 +312,11 @@ parse_fingerprint(ucl_object_t *obj)
 }
 
 static void
-free_fingerprint_list(struct fingerprint_list* list)
+free_fingerprint_list(struct fingerprint_list *list)
 {
 	struct fingerprint *fingerprint, *tmp;
 
-	STAILQ_FOREACH_SAFE(fingerprint, list, next, tmp) {
+	STAILQ_FOREACH_SAFE (fingerprint, list, next, tmp) {
 		free(fingerprint->name);
 		free(fingerprint);
 	}
@@ -601,7 +598,7 @@ read_pubkey(int fd)
 
 	sig = sbuf_new_auto();
 
-	while ((r = read(fd, buf, sizeof(buf))) >0) {
+	while ((r = read(fd, buf, sizeof(buf))) > 0) {
 		sbuf_bcat(sig, buf, r);
 	}
 
@@ -616,7 +613,8 @@ read_pubkey(int fd)
 }
 
 static struct sig_cert *
-parse_cert(int fd) {
+parse_cert(int fd)
+{
 	int my_fd;
 	struct sig_cert *sc;
 	FILE *fp;
@@ -709,8 +707,8 @@ verify_pubsignature(int fd_pkg, int fd_sig)
 
 	/* Verify the signature. */
 	printf("Verifying signature with public key %s... ", pubkey);
-	if (rsa_verify_cert(fd_pkg, pubkey, NULL, 0, pk->sig,
-	    pk->siglen) == false) {
+	if (rsa_verify_cert(fd_pkg, pubkey, NULL, 0, pk->sig, pk->siglen) ==
+	    false) {
 		fprintf(stderr, "Signature is not valid\n");
 		goto cleanup;
 	}
@@ -778,9 +776,10 @@ verify_signature(int fd_pkg, int fd_sig)
 
 	/* Check if this hash is revoked */
 	if (revoked != NULL) {
-		STAILQ_FOREACH(fingerprint, revoked, next) {
+		STAILQ_FOREACH (fingerprint, revoked, next) {
 			if (strcasecmp(fingerprint->hash, hash) == 0) {
-				fprintf(stderr, "The package was signed with "
+				fprintf(stderr,
+				    "The package was signed with "
 				    "revoked certificate %s\n",
 				    fingerprint->name);
 				goto cleanup;
@@ -788,7 +787,7 @@ verify_signature(int fd_pkg, int fd_sig)
 		}
 	}
 
-	STAILQ_FOREACH(fingerprint, trusted, next) {
+	STAILQ_FOREACH (fingerprint, trusted, next) {
 		if (strcasecmp(fingerprint->hash, hash) == 0) {
 			sc->trusted = true;
 			sc->name = strdup(fingerprint->name);
@@ -797,7 +796,8 @@ verify_signature(int fd_pkg, int fd_sig)
 	}
 
 	if (sc->trusted == false) {
-		fprintf(stderr, "No trusted fingerprint found matching "
+		fprintf(stderr,
+		    "No trusted fingerprint found matching "
 		    "package's certificate\n");
 		goto cleanup;
 	}
@@ -805,7 +805,7 @@ verify_signature(int fd_pkg, int fd_sig)
 	/* Verify the signature. */
 	printf("Verifying signature with trusted certificate %s... ", sc->name);
 	if (rsa_verify_cert(fd_pkg, NULL, sc->cert, sc->certlen, sc->sig,
-	    sc->siglen) == false) {
+		sc->siglen) == false) {
 		fprintf(stderr, "Signature is not valid\n");
 		goto cleanup;
 	}
@@ -830,7 +830,8 @@ cleanup:
 static int
 bootstrap_pkg(bool force)
 {
-	const char *extensions[6] = {".txz", ".tzst", ".tbz", ".tgz", ".tar", NULL};
+	const char *extensions[6] = { ".txz", ".tzst", ".tbz", ".tgz", ".tar",
+		NULL };
 	int fd_pkg, fd_sig;
 	int ret;
 	char url[MAXPATHLEN];
@@ -859,33 +860,37 @@ bootstrap_pkg(bool force)
 	/* Support pkg+http:// for PACKAGESITE which is the new format
 	   in 1.2 to avoid confusion on why http://pkg.FreeBSD.org has
 	   no A record. */
-	if (strncmp(URL_SCHEME_PREFIX, packagesite,
-	    strlen(URL_SCHEME_PREFIX)) == 0)
+	if (strncmp(
+		URL_SCHEME_PREFIX, packagesite, strlen(URL_SCHEME_PREFIX)) == 0)
 		packagesite += strlen(URL_SCHEME_PREFIX);
 
 	for (const char **n = extensions; *n != NULL; n++) {
 		snprintf(packagename, MAXPATHLEN, "pkg%s", *n);
-		snprintf(url, MAXPATHLEN, "%s/Latest/%s", packagesite, packagename);
+		snprintf(
+		    url, MAXPATHLEN, "%s/Latest/%s", packagesite, packagename);
 
 		snprintf(tmppkg, MAXPATHLEN, "%s/%s.XXXXXX",
-			getenv("TMPDIR") ? getenv("TMPDIR") : _PATH_TMP, packagename);
+		    getenv("TMPDIR") ? getenv("TMPDIR") : _PATH_TMP,
+		    packagename);
 
 		if ((fd_pkg = fetch_to_fd(url, tmppkg)) == -1)
 			continue;
 
 		if (signature_type != NULL &&
-			strcasecmp(signature_type, "NONE") != 0) {
+		    strcasecmp(signature_type, "NONE") != 0) {
 			if (strcasecmp(signature_type, "FINGERPRINTS") == 0) {
 
 				snprintf(tmpsig, MAXPATHLEN, "%s/%s.sig.XXXXXX",
-					getenv("TMPDIR") ? getenv("TMPDIR") : _PATH_TMP,
-					packagename);
+				    getenv("TMPDIR") ? getenv("TMPDIR") :
+							     _PATH_TMP,
+				    packagename);
 				snprintf(url, MAXPATHLEN, "%s/Latest/%s.sig",
-					packagesite, packagename);
+				    packagesite, packagename);
 
 				if ((fd_sig = fetch_to_fd(url, tmpsig)) == -1) {
-					fprintf(stderr, "Signature for pkg not "
-						"available.\n");
+					fprintf(stderr,
+					    "Signature for pkg not "
+					    "available.\n");
 					goto fetchfail;
 				}
 
@@ -894,28 +899,34 @@ bootstrap_pkg(bool force)
 			} else if (strcasecmp(signature_type, "PUBKEY") == 0) {
 
 				snprintf(tmpsig, MAXPATHLEN,
-					"%s/%s.pubkeysig.XXXXXX",
-					getenv("TMPDIR") ? getenv("TMPDIR") : _PATH_TMP,
-					packagename);
-				snprintf(url, MAXPATHLEN, "%s/Latest/%s.pubkeysig",
-					packagesite, packagename);
+				    "%s/%s.pubkeysig.XXXXXX",
+				    getenv("TMPDIR") ? getenv("TMPDIR") :
+							     _PATH_TMP,
+				    packagename);
+				snprintf(url, MAXPATHLEN,
+				    "%s/Latest/%s.pubkeysig", packagesite,
+				    packagename);
 
 				if ((fd_sig = fetch_to_fd(url, tmpsig)) == -1) {
-					fprintf(stderr, "Signature for pkg not "
-						"available.\n");
+					fprintf(stderr,
+					    "Signature for pkg not "
+					    "available.\n");
 					goto fetchfail;
 				}
 
-				if (verify_pubsignature(fd_pkg, fd_sig) == false)
+				if (verify_pubsignature(fd_pkg, fd_sig) ==
+				    false)
 					goto cleanup;
 			} else {
 				warnx("Signature type %s is not supported for "
-					"bootstrapping.", signature_type);
+				      "bootstrapping.",
+				    signature_type);
 				goto cleanup;
 			}
 		}
 
-		if ((ret = extract_pkg_static(fd_pkg, pkgstatic, MAXPATHLEN)) == 0)
+		if ((ret = extract_pkg_static(fd_pkg, pkgstatic, MAXPATHLEN)) ==
+		    0)
 			ret = install_pkg_static(pkgstatic, tmppkg, force);
 
 		goto cleanup;
@@ -924,12 +935,15 @@ bootstrap_pkg(bool force)
 fetchfail:
 	warnx("Error fetching %s: %s", url, fetchLastErrString);
 	if (fetchLastErrCode == FETCH_RESOLV) {
-		fprintf(stderr, "Address resolution failed for %s.\n", packagesite);
+		fprintf(
+		    stderr, "Address resolution failed for %s.\n", packagesite);
 		fprintf(stderr, "Consider changing PACKAGESITE.\n");
 	} else {
-		fprintf(stderr, "A pre-built version of pkg could not be found for "
+		fprintf(stderr,
+		    "A pre-built version of pkg could not be found for "
 		    "your system.\n");
-		fprintf(stderr, "Consider changing PACKAGESITE or installing it from "
+		fprintf(stderr,
+		    "Consider changing PACKAGESITE or installing it from "
 		    "ports: 'ports-mgmt/pkg'.\n");
 	}
 
@@ -948,13 +962,13 @@ cleanup:
 }
 
 static const char confirmation_message[] =
-"The package management tool is not yet installed on your system.\n"
-"Do you want to fetch and install it now? [y/N]: ";
+    "The package management tool is not yet installed on your system.\n"
+    "Do you want to fetch and install it now? [y/N]: ";
 
 static const char non_interactive_message[] =
-"The package management tool is not yet installed on your system.\n"
-"Please set ASSUME_ALWAYS_YES=yes environment variable to be able to bootstrap "
-"in non-interactive (stdin not being a tty)\n";
+    "The package management tool is not yet installed on your system.\n"
+    "Please set ASSUME_ALWAYS_YES=yes environment variable to be able to bootstrap "
+    "in non-interactive (stdin not being a tty)\n";
 
 static int
 pkg_query_yes_no(void)
@@ -994,14 +1008,14 @@ bootstrap_pkg_local(const char *pkgpath, bool force)
 		warnx("Error looking up SIGNATURE_TYPE");
 		goto cleanup;
 	}
-	if (signature_type != NULL &&
-	    strcasecmp(signature_type, "NONE") != 0) {
+	if (signature_type != NULL && strcasecmp(signature_type, "NONE") != 0) {
 		if (strcasecmp(signature_type, "FINGERPRINTS") == 0) {
 
 			snprintf(path, sizeof(path), "%s.sig", pkgpath);
 
 			if ((fd_sig = open(path, O_RDONLY)) == -1) {
-				fprintf(stderr, "Signature for pkg not "
+				fprintf(stderr,
+				    "Signature for pkg not "
 				    "available.\n");
 				goto cleanup;
 			}
@@ -1014,7 +1028,8 @@ bootstrap_pkg_local(const char *pkgpath, bool force)
 			snprintf(path, sizeof(path), "%s.pubkeysig", pkgpath);
 
 			if ((fd_sig = open(path, O_RDONLY)) == -1) {
-				fprintf(stderr, "Signature for pkg not "
+				fprintf(stderr,
+				    "Signature for pkg not "
 				    "available.\n");
 				goto cleanup;
 			}
@@ -1024,7 +1039,8 @@ bootstrap_pkg_local(const char *pkgpath, bool force)
 
 		} else {
 			warnx("Signature type %s is not supported for "
-			    "bootstrapping.", signature_type);
+			      "bootstrapping.",
+			    signature_type);
 			goto cleanup;
 		}
 	}
@@ -1059,19 +1075,21 @@ main(int argc, char *argv[])
 	if (argc > 1 && strcmp(argv[1], "bootstrap") == 0) {
 		bootstrap_only = true;
 		if (argc > 3) {
-			fprintf(stderr, "Too many arguments\nUsage: pkg bootstrap [-f]\n");
+			fprintf(stderr,
+			    "Too many arguments\nUsage: pkg bootstrap [-f]\n");
 			exit(EXIT_FAILURE);
 		}
 		if (argc == 3 && strcmp(argv[2], "-f") == 0) {
 			force = true;
 		} else if (argc == 3) {
-			fprintf(stderr, "Invalid argument specified\nUsage: pkg bootstrap [-f]\n");
+			fprintf(stderr,
+			    "Invalid argument specified\nUsage: pkg bootstrap [-f]\n");
 			exit(EXIT_FAILURE);
 		}
 	}
 
 	if ((bootstrap_only && force) || access(pkgpath, X_OK) == -1) {
-		/* 
+		/*
 		 * To allow 'pkg -N' to be used as a reliable test for whether
 		 * a system is configured to use pkg, don't bootstrap pkg
 		 * when that argument is given as argv[1].
