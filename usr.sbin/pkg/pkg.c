@@ -85,6 +85,9 @@ struct fingerprint {
 
 STAILQ_HEAD(fingerprint_list, fingerprint);
 
+static const char *extensions[6] = { ".txz", ".tzst", ".tbz", ".tgz", ".tar",
+	".bsd" };
+
 static int
 extract_pkg_static(int fd, char *p, int sz)
 {
@@ -830,9 +833,8 @@ cleanup:
 static int
 bootstrap_pkg(bool force)
 {
-	const char *extensions[6] = { ".txz", ".tzst", ".tbz", ".tgz", ".tar",
-		NULL };
 	int fd_pkg, fd_sig;
+	unsigned int i;
 	int ret;
 	char url[MAXPATHLEN];
 	char tmppkg[MAXPATHLEN];
@@ -864,8 +866,8 @@ bootstrap_pkg(bool force)
 	    strlen(URL_SCHEME_PREFIX)) == 0)
 		packagesite += strlen(URL_SCHEME_PREFIX);
 
-	for (const char **n = extensions; *n != NULL; n++) {
-		snprintf(packagename, MAXPATHLEN, "pkg%s", *n);
+	for (i = 0; i < nitems(extensions); i++) {
+		snprintf(packagename, MAXPATHLEN, "pkg%s", extensions[i]);
 		snprintf(
 		    url, MAXPATHLEN, "%s/Latest/%s", packagesite, packagename);
 
