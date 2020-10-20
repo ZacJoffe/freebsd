@@ -85,8 +85,7 @@ struct fingerprint {
 
 STAILQ_HEAD(fingerprint_list, fingerprint);
 
-static const char *extensions[6] = { ".txz", ".tzst", ".tbz", ".tgz", ".tar",
-	".bsd" };
+static const char *package_paths[2] = { "pkg.bootstrap", "Latest/pkg.txz" };
 
 static int
 extract_pkg_static(int fd, char *p, int sz)
@@ -839,7 +838,7 @@ bootstrap_pkg(bool force)
 	char url[MAXPATHLEN];
 	char tmppkg[MAXPATHLEN];
 	char tmpsig[MAXPATHLEN];
-	char packagename[MAXPATHLEN];
+	const char *package_name;
 	const char *packagesite;
 	const char *signature_type;
 	char pkgstatic[MAXPATHLEN];
@@ -866,14 +865,14 @@ bootstrap_pkg(bool force)
 	    strlen(URL_SCHEME_PREFIX)) == 0)
 		packagesite += strlen(URL_SCHEME_PREFIX);
 
-	for (i = 0; i < nitems(extensions); i++) {
-		snprintf(packagename, MAXPATHLEN, "pkg%s", extensions[i]);
+	for (i = 0; i < nitems(package_paths); i++) {
+		(package_name = strrchr(package_paths[i], '/')) ? ++package_name : (package_name = package_paths[i]);
 		snprintf(
-		    url, MAXPATHLEN, "%s/Latest/%s", packagesite, packagename);
+		    url, MAXPATHLEN, "%s/%s", packagesite, package_paths[i]);
 
 		snprintf(tmppkg, MAXPATHLEN, "%s/%s.XXXXXX",
 		    getenv("TMPDIR") ? getenv("TMPDIR") : _PATH_TMP,
-		    packagename);
+		    package_name);
 
 		if ((fd_pkg = fetch_to_fd(url, tmppkg)) == -1)
 			continue;
@@ -885,9 +884,9 @@ bootstrap_pkg(bool force)
 				snprintf(tmpsig, MAXPATHLEN, "%s/%s.sig.XXXXXX",
 				    getenv("TMPDIR") ? getenv("TMPDIR") :
 							     _PATH_TMP,
-				    packagename);
-				snprintf(url, MAXPATHLEN, "%s/Latest/%s.sig",
-				    packagesite, packagename);
+				    package_name);
+				snprintf(url, MAXPATHLEN, "%s/%s.sig",
+				    packagesite, package_paths[i]);
 
 				if ((fd_sig = fetch_to_fd(url, tmpsig)) == -1) {
 					fprintf(stderr,
@@ -904,10 +903,10 @@ bootstrap_pkg(bool force)
 				    "%s/%s.pubkeysig.XXXXXX",
 				    getenv("TMPDIR") ? getenv("TMPDIR") :
 							     _PATH_TMP,
-				    packagename);
+				    package_name);
 				snprintf(url, MAXPATHLEN,
-				    "%s/Latest/%s.pubkeysig", packagesite,
-				    packagename);
+				    "%s/%s.pubkeysig", packagesite,
+				    package_paths[i]);
 
 				if ((fd_sig = fetch_to_fd(url, tmpsig)) == -1) {
 					fprintf(stderr,
