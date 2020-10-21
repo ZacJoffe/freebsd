@@ -866,7 +866,9 @@ bootstrap_pkg(bool force)
 		packagesite += strlen(URL_SCHEME_PREFIX);
 
 	for (i = 0; i < nitems(package_paths); i++) {
-		(package_name = strrchr(package_paths[i], '/')) ? ++package_name : (package_name = package_paths[i]);
+		(package_name = strrchr(package_paths[i], '/')) ?
+			  ++package_name :
+			  (package_name = package_paths[i]);
 		snprintf(
 		    url, MAXPATHLEN, "%s/%s", packagesite, package_paths[i]);
 
@@ -904,9 +906,8 @@ bootstrap_pkg(bool force)
 				    getenv("TMPDIR") ? getenv("TMPDIR") :
 							     _PATH_TMP,
 				    package_name);
-				snprintf(url, MAXPATHLEN,
-				    "%s/%s.pubkeysig", packagesite,
-				    package_paths[i]);
+				snprintf(url, MAXPATHLEN, "%s/%s.pubkeysig",
+				    packagesite, package_paths[i]);
 
 				if ((fd_sig = fetch_to_fd(url, tmpsig)) == -1) {
 					fprintf(stderr,
